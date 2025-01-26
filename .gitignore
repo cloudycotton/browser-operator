@@ -1,0 +1,6 @@
+.env
+node_modules
+dist
+downloads
+_examples
+.DS_Store

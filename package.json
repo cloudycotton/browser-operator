@@ -1,0 +1,34 @@
+{
+  "name": "browser-operator",
+  "version": "0.0.12",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "npx playwright install --with-deps",
+    "build": "tsup src/index.ts --dts"
+  },
+  "bin": {
+    "browser-operator": "./bin/run"
+  },
+  "license": "MIT",
+  "description": "A library to build operators for browser automation",
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.1.2",
+    "ai": "^4.1.5",
+    "pino": "^9.6.0",
+    "playwright": "^1.50.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.10",
+    "tsup": "^8.3.6"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "src"
+  ]
+}

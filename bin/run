@@ -1,0 +1,63 @@
+#!/usr/bin/env npx tsx
+
+import { BrowserOperator } from "../src";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { createMd5Hash, isPathAvailable } from "../src/utils";
+
+const execFileAsync = promisify(execFile);
+
+const argv = yargs(hideBin(process.argv))
+  .usage("Usage: $0 <command> [options]")
+  .option("generate-script", {
+    alias: "g",
+    type: "boolean",
+    description: "Generate a reusable Playwright script",
+  })
+  .option("output", {
+    alias: "o",
+    type: "string",
+    description: "Output file for the generated script",
+  })
+  .demandCommand(1, "Please provide either a command string or a file path")
+  .help().argv;
+
+async function run() {
+  const input = argv._[0].toString();
+  let command;
+  try {
+    await fs.access(input);
+    command = (await fs.readFile(input, "utf-8")).trim();
+  } catch {
+    command = input;
+  }
+
+  const hash = createMd5Hash(command);
+  const scriptPath = path.join(process.cwd(), `generated_script_${hash}.ts`);
+  const isScriptPathAvailable = await isPathAvailable(scriptPath);
+
+  if (isScriptPathAvailable) {
+    console.log(`Found existing script at ${scriptPath}, executing...`);
+    const { stdout } = await execFileAsync("npx", ["tsx", scriptPath]);
+    return stdout;
+  } else {
+    // Script doesn't exist, run operator and generate script
+    const operator = await BrowserOperator.create();
+    const response = await operator.page.act(command);
+
+    const script = operator.page._generateScript();
+    await fs.writeFile(scriptPath, script);
+    console.log(`Generated and saved script to ${scriptPath}`);
+
+    await operator.stop();
+    return response;
+  }
+}
+
+run()
+  .catch((error) => console.error(error))
+  .then((result) => console.log(result));
